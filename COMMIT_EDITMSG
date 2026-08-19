@@ -1,0 +1,5 @@
+Initial commit: Unity project scaffold
+
+- Standard Assets/Packages/ProjectSettings folder layout
+- Unity .gitignore and Git LFS .gitattributes
+- README with setup and GitHub push instructions
