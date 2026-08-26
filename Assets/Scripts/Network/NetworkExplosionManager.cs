@@ -40,6 +40,8 @@ namespace WormWars.Network
             // NetworkVariable once detonated, so nothing further is needed for the
             // collapse itself here - only the local camera feedback remains.
             TriggerShakeClientRpc(explosionPoint, force);
+
+            NetworkAudioManager.Instance?.PlaySoundEffect(WormSoundEvent.Explosion, explosionPoint);
         }
 
         [ClientRpc]
