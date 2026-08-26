@@ -18,8 +18,7 @@ namespace WormWars.Network
         [Header("Explosion")]
         [SerializeField] float explosionRadius = 4f;
         [SerializeField] float explosionForce = 700f;
-        [SerializeField] float explosionUpwardsModifier = 0.3f;
-        [SerializeField] LayerMask castleBlockMask = ~0;
+        [SerializeField] NetworkExplosionManager explosionManager;
 
         [Header("Remote Interpolation")]
         [SerializeField] float positionLerpSpeed = 20f;
@@ -82,14 +81,7 @@ namespace WormWars.Network
             if (_exploded) return;
             _exploded = true;
 
-            Collider[] hits = Physics.OverlapSphere(explosionPosition, explosionRadius, castleBlockMask);
-            foreach (Collider hit in hits)
-            {
-                if (hit.TryGetComponent(out CastleBlock block))
-                {
-                    block.Detonate(explosionPosition, explosionForce, explosionRadius, explosionUpwardsModifier);
-                }
-            }
+            if (explosionManager != null) explosionManager.TriggerExplosion(explosionPosition, explosionRadius, explosionForce);
 
             NetworkObject.Despawn(true);
         }
