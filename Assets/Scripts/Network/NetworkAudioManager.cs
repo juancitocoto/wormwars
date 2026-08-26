@@ -22,16 +22,28 @@ namespace WormWars.Network
         [SerializeField] SoundEntry[] soundLibrary;
         [SerializeField, Range(0f, 1f)] float volume = 1f;
 
+        // One audio manager per match, so other server-side systems (explosions, weapon
+        // fire, turn transitions, ...) have a simple call site instead of needing their own
+        // serialized reference wired up in every prefab.
+        public static NetworkAudioManager Instance { get; private set; }
+
         readonly Dictionary<WormSoundEvent, AudioClip> _clipLookup = new Dictionary<WormSoundEvent, AudioClip>();
 
         void Awake()
         {
+            Instance = this;
+
             if (soundLibrary == null) return;
 
             foreach (SoundEntry entry in soundLibrary)
             {
                 if (entry.clip != null) _clipLookup[entry.soundEvent] = entry.clip;
             }
+        }
+
+        void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
         }
 
         // Server-only. Call this wherever an event happens server-side (a shot fired, an
