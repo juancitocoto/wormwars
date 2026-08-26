@@ -28,6 +28,8 @@ namespace WormWars.Network
 
         public event Action<Vector3[]> OnTrajectoryUpdated;
 
+        public bool IsAiming => _isAiming;
+
         bool _isAiming;
         Vector3 _aimDirection = Vector3.forward;
         float _aimPower;
