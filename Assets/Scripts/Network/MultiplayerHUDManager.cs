@@ -84,7 +84,9 @@ namespace WormWars.Network
             turnTimerText.color = secondsRemaining <= urgentThresholdSeconds ? urgentTimerColor : normalTimerColor;
         }
 
-        void RefreshActiveWeapon(string weaponName)
+        // Public so a worm's own inventory (see NetworkWormInventory) can push its weapon
+        // name in directly on selection, in addition to this class's own per-frame poll.
+        public void RefreshActiveWeapon(string weaponName)
         {
             if (activeWeaponNameText != null) activeWeaponNameText.text = weaponName;
         }
