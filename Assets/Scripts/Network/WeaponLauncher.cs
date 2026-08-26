@@ -21,14 +21,25 @@ namespace WormWars.Network
         [ServerRpc]
         void FireServerRpc(Vector3 launchVelocity)
         {
-            if (projectilePrefab == null || muzzle == null) return;
+            SpawnProjectile(launchVelocity);
+        }
+
+        // Server-only. Exposed so other server-side systems that already did their own
+        // validation (e.g. an ammo/turn handler) can spawn a projectile directly, without
+        // going through the owner-only ServerRpc path above.
+        public NetworkProjectile SpawnProjectile(Vector3 launchVelocity)
+        {
+            if (!IsServer || projectilePrefab == null || muzzle == null) return null;
 
             Vector3 clampedVelocity = Vector3.ClampMagnitude(launchVelocity, maxLaunchSpeed);
             Vector3 facing = clampedVelocity.sqrMagnitude > 0.0001f ? clampedVelocity.normalized : muzzle.forward;
 
             NetworkObject instance = Instantiate(projectilePrefab, muzzle.position, Quaternion.LookRotation(facing, Vector3.up));
             instance.Spawn(true);
-            instance.GetComponent<NetworkProjectile>().ServerInitialize(clampedVelocity);
+
+            var projectile = instance.GetComponent<NetworkProjectile>();
+            projectile.ServerInitialize(clampedVelocity);
+            return projectile;
         }
     }
 }

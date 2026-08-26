@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -29,11 +30,23 @@ namespace WormWars.Network
         // pipeline hooks this to toggle the correct weapon mesh's visibility.
         public event Action<WeaponData> OnActiveWeaponChanged;
 
+        // Per-instance remaining ammo, keyed by weaponID - WeaponData is a shared asset, so
+        // ammo actually fired must live here, not on the ScriptableObject itself.
+        readonly Dictionary<int, int> _remainingAmmo = new Dictionary<int, int>();
+
         INetworkGameManager _gameManager;
 
         void Awake()
         {
             _gameManager = gameManagerSource as INetworkGameManager;
+
+            if (availableWeapons != null)
+            {
+                foreach (WeaponData weapon in availableWeapons)
+                {
+                    if (weapon != null) _remainingAmmo[weapon.weaponID] = weapon.ammoCount;
+                }
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -103,11 +116,26 @@ namespace WormWars.Network
         [ServerRpc]
         void ChangeWeaponServerRpc(int requestedID)
         {
-            WeaponData requested = FindWeapon(requestedID);
-            if (requested == null) return;
-            if (requested.ammoCount == 0) return; // not owned / no ammo left
+            if (FindWeapon(requestedID) == null) return;
+            if (!HasAmmo(requestedID)) return;
 
             _activeWeaponID.Value = requestedID;
+        }
+
+        // Server-only. True if this weapon has ammo left (or infinite ammo, ammoCount < 0).
+        public bool HasAmmo(int weaponID)
+        {
+            return _remainingAmmo.TryGetValue(weaponID, out int remaining) && remaining != 0;
+        }
+
+        // Server-only. Decrements the given weapon's remaining ammo by one; a no-op for
+        // infinite-ammo weapons (negative count).
+        public void ConsumeAmmo(int weaponID)
+        {
+            if (!IsServer) return;
+            if (!_remainingAmmo.TryGetValue(weaponID, out int remaining) || remaining < 0) return;
+
+            _remainingAmmo[weaponID] = Mathf.Max(0, remaining - 1);
         }
 
         WeaponData FindWeapon(int weaponID)

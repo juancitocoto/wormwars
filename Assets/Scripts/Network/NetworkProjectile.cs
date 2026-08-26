@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -26,6 +27,10 @@ namespace WormWars.Network
 
         readonly NetworkVariable<Vector3> _networkPosition =
             new NetworkVariable<Vector3>(writePerm: NetworkVariableWritePermission.Server);
+
+        // Server-only. Fires once, right before this projectile despawns, so whoever fired
+        // it (see NetworkCombatTurnHandler) knows when it's safe to hand off the turn.
+        public event Action OnExploded;
 
         Vector3 _velocity;
         float _elapsed;
@@ -91,6 +96,7 @@ namespace WormWars.Network
                 }
             }
 
+            OnExploded?.Invoke();
             NetworkObject.Despawn(true);
         }
     }
