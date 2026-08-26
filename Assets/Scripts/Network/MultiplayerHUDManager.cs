@@ -1,6 +1,8 @@
+using System;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace WormWars.Network
 {
@@ -26,6 +28,15 @@ namespace WormWars.Network
         [SerializeField] GameObject waitingForOpponentPanel;
         [SerializeField] GameObject weaponSelectionPanel;
 
+        [Header("Match Result Panel")]
+        [SerializeField] GameObject matchResultPanel;
+        [SerializeField] TMP_Text matchResultText;
+        [SerializeField] string victoryText = "VICTORY";
+        [SerializeField] string defeatText = "DEFEAT";
+        [SerializeField] string drawText = "DRAW";
+        [Tooltip("Only shown to the host - lets them return to a lobby or restart the scene.")]
+        [SerializeField] Button restartButton;
+
         [Header("Timer Warning")]
         [SerializeField] float urgentThresholdSeconds = 5f;
         [SerializeField] Color normalTimerColor = Color.white;
@@ -36,6 +47,8 @@ namespace WormWars.Network
         [SerializeField] MonoBehaviour gameManagerSource;
         [SerializeField] NetworkTrajectoryPredictor trajectoryPredictor;
 
+        public event Action OnRestartRequested;
+
         INetworkGameManager _gameManager;
 
         void Awake()
@@ -45,6 +58,9 @@ namespace WormWars.Network
             {
                 Debug.LogError($"{nameof(MultiplayerHUDManager)}: gameManagerSource must implement {nameof(INetworkGameManager)}.", this);
             }
+
+            if (restartButton != null) restartButton.onClick.AddListener(() => OnRestartRequested?.Invoke());
+            if (matchResultPanel != null) matchResultPanel.SetActive(false);
         }
 
         void OnEnable()
@@ -101,6 +117,18 @@ namespace WormWars.Network
             // Weapon selection is fully hidden (not just visually disabled) unless it's this
             // client's turn, so an inactive player can never even attempt to fire.
             if (weaponSelectionPanel != null) weaponSelectionPanel.SetActive(isLocalPlayerActive);
+        }
+
+        // Called by whatever declares the match over (see NetworkMatchEndMonitor) once it's
+        // already resolved the result down to "did the local player win".
+        public void ShowMatchResult(bool localPlayerWon, bool isDraw)
+        {
+            if (matchResultPanel != null) matchResultPanel.SetActive(true);
+            if (matchResultText != null) matchResultText.text = isDraw ? drawText : (localPlayerWon ? victoryText : defeatText);
+
+            // Only the host drives what "restart" means (reload the scene, return to
+            // lobby, etc.), so only the host ever sees the control for it.
+            if (restartButton != null) restartButton.gameObject.SetActive(NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost);
         }
 
         void RefreshWindIndicator(Vector3 wind)

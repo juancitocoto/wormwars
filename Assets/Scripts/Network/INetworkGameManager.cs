@@ -17,5 +17,10 @@ namespace WormWars.Network
         // Server-only. Called once match setup (worm spawning) has finished, to hand off
         // into the very first player's active turn phase.
         void BeginMatch(ulong firstActiveClientId);
+
+        // Server-only. Called once a victory/defeat/draw condition is met. Implementations
+        // are expected to transition into a GameOver state that pauses all turn timers and
+        // locks every client's movement/weapon input.
+        void EndMatch(ulong winningClientId, bool isDraw);
     }
 }
