@@ -27,6 +27,9 @@ namespace WormWars.Network
         public Vector3[] PreviewPoints { get; private set; } = Array.Empty<Vector3>();
 
         public event Action<Vector3[]> OnTrajectoryUpdated;
+        // Fires on every client (not just the server) whenever the synced wind changes,
+        // so HUD/UI elements can react without polling CurrentWind every frame.
+        public event Action<Vector3> OnWindChanged;
 
         bool _isAiming;
         Vector3 _aimDirection = Vector3.forward;
@@ -35,6 +38,8 @@ namespace WormWars.Network
 
         public override void OnNetworkSpawn()
         {
+            _currentWind.OnValueChanged += HandleWindValueChanged;
+
             if (!IsServer) return;
 
             RandomizeWind();
@@ -43,8 +48,11 @@ namespace WormWars.Network
 
         public override void OnNetworkDespawn()
         {
+            _currentWind.OnValueChanged -= HandleWindValueChanged;
             if (IsServer && turnManager != null) turnManager.OnStateChanged -= HandleTurnStateChanged;
         }
+
+        void HandleWindValueChanged(Vector3 previous, Vector3 current) => OnWindChanged?.Invoke(current);
 
         void HandleTurnStateChanged(TurnState state)
         {
