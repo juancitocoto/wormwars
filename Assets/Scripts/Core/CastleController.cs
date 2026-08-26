@@ -26,6 +26,27 @@ namespace WormWars.Core
             CurrentHP = maxHP;
         }
 
+        // Castle HP by tier, transcribed from the Castle HP table in worm_battle_handoff_spec.md.
+        // [TUNE] pending playtest, same as the source table.
+        public static int MaxHPForTier(int tier)
+        {
+            if (tier <= 1) return 10;
+            if (tier == 2) return 16;
+            return 24;
+        }
+
+        // Applied when a StructureTier CastleUpgradeDefinition is bought — see Castle3DView.
+        // Full-heals to the new max rather than preserving damage percentage: a tier purchase
+        // happens in the build/shop screen between battles, not mid-siege.
+        public void SetTier(int tier)
+        {
+            upgradeTier = tier;
+            maxHP = MaxHPForTier(tier);
+            CurrentHP = maxHP;
+            HitCount = 0;
+            Stage = CastleDamageStage.Intact;
+        }
+
         public void ApplyDamage(float rawDamage)
         {
             if (Stage == CastleDamageStage.Destroyed) return;
